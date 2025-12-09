@@ -4,6 +4,8 @@
 #include <time.h>
 
 extern value body(struct thread_info *);
+extern void print_compcert_lib_Integers_Byte_int(value);
+extern void print_Coq_Init_Datatypes_list(value, void (*)(value));
 
 int main(int argc, char *argv[]) {
   value val;
@@ -19,13 +21,12 @@ int main(int argc, char *argv[]) {
   // Run Coq program
   for (int i = 0; i < n; i ++) {
     tinfo = make_tinfo();
-    body(tinfo);
+    val = body(tinfo);
   }
   end = clock();
 
-  /* TODO write string printers */
-  /* print_Coq_Init_Datatypes_list(val, print_Coq_Init_Datatypes_bool); */
-  /* printf("\n"); */
+  print_Coq_Init_Datatypes_list(val, print_compcert_lib_Integers_Byte_int);
+  printf("\n");
 
   sec = (double)(end - start)/CLOCKS_PER_SEC;
   msec = 1000*sec;

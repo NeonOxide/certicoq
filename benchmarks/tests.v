@@ -1,8 +1,8 @@
 Require Import Arith List String.
+Require Import CertiCoq.Benchmarks.lib.sha256.
 Require Import CertiCoq.Benchmarks.lib.vs.
 Require Import CertiCoq.Benchmarks.lib.Binom.
 Require Import CertiCoq.Benchmarks.lib.Color.
-Require Import CertiCoq.Benchmarks.lib.sha256.
 Require Import CertiCoq.Benchmarks.lib.coind.
 From MetaCoq.Utils Require Import bytestring MCString.
 From CertiCoq.Plugin Require Import CertiCoq.
@@ -17,9 +17,44 @@ Import VeriStar.
 CertiCoq -help.
 
 
-(* Demo 1 *)
 
+From CertiCoq.Plugin Require Import Loader.
+Require Import Coq.Array.PArray.
+From Coq Require Import Uint63.
+
+Definition byte_to_uint63 (b : Integers.Byte.int) : PrimInt63.int :=
+  of_Z (Integers.Byte.unsigned b).
+
+(* Convert uint63 to byte, assuming the value fits in a byte *)
+Definition uint63_to_byte (n : int) : Integers.Byte.int :=
+  Integers.Byte.repr (to_Z n).
+
+(*
+CertiCoq Compile -O 1 byte_to_uint63.
+CertiCoq Compile -O 1 uint63_to_byte.
+*)
+
+CertiCoq Register [
+  sha256.SHA_256'  => "coq_sha256_wrapper" with tinfo
+]
+
+Include [ Library "sha256.h" ].
+Definition test := "Coq is a formal proof management system. It provides a formal language to write mathematical definitions, executable algorithms and theorems together with an environment for semi-interactive development of machine-checked proofs. Typical applications include the certification of properties of programming languages (e.g. the CompCert compiler certification project, the Verified Software Toolchain for verification of C programs, or the Iris framework for concurrent separation logic), the formalization of mathematics (e.g. the full formalization of the Feit-Thompson theorem, or homotopy type theory), and teaching."%string.
+Definition sha_fast : list Integers.Byte.int := sha256.SHA_256' (sha256.str_to_bytes test).
+Compute sha_fast.
+CertiCoq Compile -O 1 -ext "_my_sha" sha_fast.
+
+(* Demo 1 *)
 Definition demo1 := List.app (List.repeat true 500) (List.repeat false 300).
+
+Compute sha_fast.
+Eval compute in "Compiling sha_fast".
+CertiCoq Compile -O 0 sha_fast.
+CertiCoq Compile -ext "_opt" sha_fast.
+CertiCoq Compile -args 1000 -config 9 -O 1 -ext "_opt_ll" sha_fast.
+(* CertiCoq Compile -O 0 -cps -ext "_cps" sha_fast. *)
+(* CertiCoq Compile -cps -ext "_cps_opt" sha_fast. *)
+CertiCoq Generate Glue -file "glue_sha_fast" [ list, Integers.Byte.int].
 
 (* Demo 2 *)
 
